@@ -1,0 +1,77 @@
+class StudentChild {
+  final int id;
+  final String fullName;
+  final String? phoneNumber;
+  final String? address;
+  final String? parentOccupation;
+  final String? dateOfBirth;
+  final String? enrollmentDate;
+  final String? parentName;
+
+  StudentChild({
+    required this.id,
+    required this.fullName,
+    this.phoneNumber,
+    this.address,
+    this.parentOccupation,
+    this.dateOfBirth,
+    this.enrollmentDate,
+    this.parentName,
+  });
+
+  factory StudentChild.fromJson(Map<String, dynamic> json) {
+    return StudentChild(
+      id: json['id'] ?? 0,
+      fullName: json['full_name'] ?? '',
+      phoneNumber: json['phone_number'],
+      address: json['address'],
+      parentOccupation: json['parent_occupation'],
+      dateOfBirth: json['date_of_birth'],
+      enrollmentDate: json['enrollment_date'],
+      parentName: json['parent_name'],
+    );
+  }
+}
+
+class ChildAnnouncement {
+  final String childName;
+  final AnnouncementData announcement;
+
+  ChildAnnouncement({required this.childName, required this.announcement});
+
+  factory ChildAnnouncement.fromJson(Map<String, dynamic> json) {
+    return ChildAnnouncement(
+      childName: json['child_name'] ?? '',
+      announcement: AnnouncementData.fromJson(json['announcement'] ?? {}),
+    );
+  }
+}
+
+class AnnouncementData {
+  final int id;
+  final String title;
+  final String content;
+  final String? teacherName;
+  final String? className;
+  final String createdAt;
+
+  AnnouncementData({
+    required this.id,
+    required this.title,
+    required this.content,
+    this.teacherName,
+    this.className,
+    required this.createdAt,
+  });
+
+  factory AnnouncementData.fromJson(Map<String, dynamic> json) {
+    return AnnouncementData(
+      id: json['id'] ?? 0,
+      title: json['title'] ?? '',
+      content: json['content'] ?? '',
+      teacherName: json['teacher_name'],
+      className: json['class_name'],
+      createdAt: json['created_at'] ?? '',
+    );
+  }
+}
