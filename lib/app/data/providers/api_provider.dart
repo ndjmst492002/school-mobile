@@ -6,7 +6,10 @@ class ApiProvider extends GetxService {
   String? _sessionCookie;
 
   // Update this to match your backend URL
-  static const String baseUrl = 'http://localhost:8000/api';
+  //Android Device (with your ip address)
+  static const String baseUrl = 'http://192.168.1.5:8000/api';
+  //Chrome(Web)
+  //static const String baseUrl = 'http://localhost:8000/api';
 
   Future<ApiProvider> init() async {
     _dio = dio_pkg.Dio(

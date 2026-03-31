@@ -37,15 +37,18 @@ class AdminView extends GetView<AdminController> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.blue[200]!),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.admin_panel_settings, color: Colors.blue),
-                  SizedBox(width: 8),
-                  Text(
-                    'Admin Only: You have full system access',
-                    style: TextStyle(
-                      color: Colors.blue,
-                      fontWeight: FontWeight.w500,
+                  const Icon(Icons.admin_panel_settings, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  Expanded(  // ← Add this
+                    child: Text(
+                      'Admin Only: You have full system access',
+                      style: const TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      softWrap: true,  // ← Allow text to wrap to next line
                     ),
                   ),
                 ],
@@ -90,8 +93,12 @@ class AdminView extends GetView<AdminController> {
   }
 
   Widget _buildStatsGrid() {
+    // Calculate crossAxisCount based on screen width
+    final screenWidth = MediaQuery.of(Get.context!).size.width;
+    final crossAxisCount = screenWidth < 600 ? 2 : 4;  // 2 columns on phones, 4 on tablets
+
     return GridView.count(
-      crossAxisCount: 4,
+      crossAxisCount: crossAxisCount,  // ← Changed from fixed 4
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 8,
@@ -250,6 +257,7 @@ class AdminView extends GetView<AdminController> {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,  // ← Keep this
           children: [
             const Text(
               'Quick Actions',
@@ -261,13 +269,10 @@ class AdminView extends GetView<AdminController> {
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             const SizedBox(height: 16),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              childAspectRatio: 2,
+            // Replace GridView with Wrap
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 _buildActionButton(Icons.people, 'Manage Users'),
                 _buildActionButton(Icons.menu_book, 'Manage Classes'),
@@ -282,19 +287,26 @@ class AdminView extends GetView<AdminController> {
   }
 
   Widget _buildActionButton(IconData icon, String label) {
-    return OutlinedButton(
-      onPressed: () {},
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.all(8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 24),
-          const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 12)),
-        ],
+    return SizedBox(
+      width: 120,  // Fixed width
+      child: OutlinedButton(
+        onPressed: () {},
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.all(8),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 24),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

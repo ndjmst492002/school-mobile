@@ -1,8 +1,8 @@
-import 'dart:html' as html;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../data/providers/api_provider.dart';
 import '../../data/services/auth_api.dart';
 import '../../data/services/teacher_api.dart';
@@ -250,13 +250,14 @@ class TeacherController extends GetxController {
     return _teacherApi.downloadSubmissionUrl(submissionId);
   }
 
-  void downloadSubmission(int submissionId) {
+  // FIXED: Now works on both web and mobile
+  Future<void> downloadSubmission(int submissionId) async {
     final url = downloadSubmissionUrl(submissionId);
     debugPrint('Download URL: $url');
 
     // Find the submission to check if it has a file
     final submission = submissions.firstWhereOrNull(
-      (s) => s.id == submissionId,
+          (s) => s.id == submissionId,
     );
     if (submission == null) {
       Get.snackbar('Error', 'Submission not found');
@@ -268,11 +269,11 @@ class TeacherController extends GetxController {
       return;
     }
 
-    // For web, open in new tab
-    if (kIsWeb) {
-      html.window.open(url, '_blank');
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
-      Get.snackbar('Download', 'URL: $url');
+      Get.snackbar('Error', 'Cannot open download link');
     }
   }
 

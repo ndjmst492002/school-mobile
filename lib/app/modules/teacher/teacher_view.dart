@@ -19,21 +19,21 @@ class TeacherView extends GetView<TeacherController> {
           title: const Text('Teacher Dashboard'),
           actions: [
             Obx(
-              () => controller.showChat.value
+                  () => controller.showChat.value
                   ? IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () {
-                        Get.delete<ChatController>();
-                        controller.toggleChat();
-                      },
-                    )
+                icon: const Icon(Icons.close),
+                onPressed: () {
+                  Get.delete<ChatController>();
+                  controller.toggleChat();
+                },
+              )
                   : IconButton(
-                      icon: const Icon(Icons.chat),
-                      onPressed: () {
-                        Get.put(ChatController());
-                        controller.toggleChat();
-                      },
-                    ),
+                icon: const Icon(Icons.chat),
+                onPressed: () {
+                  Get.put(ChatController());
+                  controller.toggleChat();
+                },
+              ),
             ),
             IconButton(
               icon: const Icon(Icons.logout),
@@ -43,11 +43,11 @@ class TeacherView extends GetView<TeacherController> {
         ),
         body: controller.showChat.value
             ? ChatView(
-                onClose: () {
-                  Get.delete<ChatController>();
-                  controller.toggleChat();
-                },
-              )
+          onClose: () {
+            Get.delete<ChatController>();
+            controller.toggleChat();
+          },
+        )
             : _buildContent(),
       );
     });
@@ -63,7 +63,7 @@ class TeacherView extends GetView<TeacherController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Obx(
-              () => Text(
+                  () => Text(
                 'Welcome, ${controller.userName}',
                 style: const TextStyle(fontSize: 18),
               ),
@@ -95,16 +95,21 @@ class TeacherView extends GetView<TeacherController> {
 
   Widget _buildStatsCards() {
     return Obx(
-      () => Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          _buildStatChip('Announcements', '${controller.announcements.length}'),
-          _buildStatChip('Students', '${controller.totalStudents}'),
-          _buildStatChip('Exercises', '${controller.exercises.length}'),
-          _buildStatChip('Submissions', '${controller.submissions.length}'),
-          _buildStatChip('Pending', '${controller.pendingCount}'),
-        ],
+          () => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildStatChip('Announcements', '${controller.announcements.length}'),
+            const SizedBox(width: 8),
+            _buildStatChip('Students', '${controller.totalStudents}'),
+            const SizedBox(width: 8),
+            _buildStatChip('Exercises', '${controller.exercises.length}'),
+            const SizedBox(width: 8),
+            _buildStatChip('Submissions', '${controller.submissions.length}'),
+            const SizedBox(width: 8),
+            _buildStatChip('Pending', '${controller.pendingCount}'),
+          ],
+        ),
       ),
     );
   }
@@ -124,7 +129,7 @@ class TeacherView extends GetView<TeacherController> {
 
   Widget _buildQuickActions() {
     return Obx(
-      () => Column(
+          () => Column(
         children: [
           Row(
             children: [
@@ -133,9 +138,8 @@ class TeacherView extends GetView<TeacherController> {
                   onPressed: controller.toggleUploadForm,
                   icon: const Icon(Icons.upload),
                   label: Text(
-                    controller.showUploadForm.value
-                        ? 'Cancel'
-                        : 'Upload Exercise',
+                    controller.showUploadForm.value ? 'Cancel' : 'Upload Exercise',
+                    style: const TextStyle(fontSize: 11.9),
                   ),
                 ),
               ),
@@ -145,9 +149,8 @@ class TeacherView extends GetView<TeacherController> {
                   onPressed: controller.toggleAnnouncementForm,
                   icon: const Icon(Icons.campaign),
                   label: Text(
-                    controller.showAnnouncementForm.value
-                        ? 'Cancel'
-                        : 'Announcement',
+                    controller.showAnnouncementForm.value ? 'Cancel' : 'Announcement',
+                    style: const TextStyle(fontSize: 11.9),
                   ),
                 ),
               ),
@@ -194,7 +197,7 @@ class TeacherView extends GetView<TeacherController> {
                   );
                   if (date != null) {
                     controller.uploadDueDateController.text =
-                        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                    '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
                   }
                 },
                 child: AbsorbPointer(
@@ -215,7 +218,7 @@ class TeacherView extends GetView<TeacherController> {
                           );
                           if (date != null) {
                             controller.uploadDueDateController.text =
-                                '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
                           }
                         },
                       ),
@@ -226,7 +229,7 @@ class TeacherView extends GetView<TeacherController> {
             ),
             const SizedBox(height: 8),
             Obx(
-              () => DropdownButtonFormField<String>(
+                  () => DropdownButtonFormField<String>(
                 value: controller.uploadClassId.value.isEmpty
                     ? null
                     : controller.uploadClassId.value,
@@ -234,38 +237,134 @@ class TeacherView extends GetView<TeacherController> {
                 items: controller.classes
                     .map(
                       (cls) => DropdownMenuItem(
-                        value: cls.id.toString(),
-                        child: Text('${cls.name} (${cls.studentCount})'),
-                      ),
-                    )
+                    value: cls.id.toString(),
+                    child: Text('${cls.name} (${cls.studentCount})'),
+                  ),
+                )
                     .toList(),
                 onChanged: (v) => controller.updateUploadClassId(v ?? ''),
               ),
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                OutlinedButton.icon(
-                  onPressed: controller.pickFile,
-                  icon: const Icon(Icons.attach_file),
-                  label: Text(
-                    controller.selectedFile.value != null
-                        ? controller.selectedFile.value!.name
-                        : 'Choose File',
-                  ),
+            // File display section
+            Obx(() {
+              final selectedFile = controller.selectedFile.value;
+              return Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!),
                 ),
-                const SizedBox(width: 12),
-                Obx(
-                  () => ElevatedButton(
-                    onPressed: controller.isUploading.value
-                        ? null
-                        : controller.uploadExercise,
-                    child: Text(
-                      controller.isUploading.value ? 'Uploading...' : 'Upload',
+                child: Row(
+                  children: [
+                    Icon(
+                      selectedFile != null ? Icons.insert_drive_file : Icons.attach_file,
+                      size: 20,
+                      color: Colors.blue,
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        selectedFile != null
+                            ? selectedFile.name
+                            : 'No file selected',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: selectedFile != null ? Colors.black : Colors.grey,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                    if (selectedFile != null)
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 16),
+                        onPressed: () {
+                          controller.selectedFile.value = null;
+                        },
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                  ],
                 ),
-              ],
+              );
+            }),
+            const SizedBox(height: 12),
+            // Buttons
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isSmallScreen = constraints.maxWidth < 400;
+
+                if (isSmallScreen) {
+                  return Column(
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: controller.pickFile,
+                          icon: const Icon(Icons.folder_open, size: 18),
+                          label: const Text('Choose File'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Obx(
+                            () => SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: controller.isUploading.value
+                                ? null
+                                : controller.uploadExercise,
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                            child: Text(
+                              controller.isUploading.value ? 'Uploading...' : 'Upload',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                } else {
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: controller.pickFile,
+                          icon: const Icon(Icons.folder_open, size: 18),
+                          label: const Text('Choose File'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 140,
+                        child: Obx(
+                              () => ElevatedButton(
+                            onPressed: controller.isUploading.value
+                                ? null
+                                : controller.uploadExercise,
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                            child: Text(
+                              controller.isUploading.value ? 'Uploading...' : 'Upload',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+              },
             ),
           ],
         ),
@@ -298,7 +397,7 @@ class TeacherView extends GetView<TeacherController> {
             ),
             const SizedBox(height: 8),
             Obx(
-              () => DropdownButtonFormField<String>(
+                  () => DropdownButtonFormField<String>(
                 value: controller.announcementClassId.value.isEmpty
                     ? null
                     : controller.announcementClassId.value,
@@ -308,7 +407,7 @@ class TeacherView extends GetView<TeacherController> {
                 items: [
                   const DropdownMenuItem(value: '', child: Text('All Classes')),
                   ...controller.classes.map(
-                    (cls) => DropdownMenuItem(
+                        (cls) => DropdownMenuItem(
                       value: cls.id.toString(),
                       child: Text(cls.name),
                     ),
@@ -319,7 +418,7 @@ class TeacherView extends GetView<TeacherController> {
             ),
             const SizedBox(height: 12),
             Obx(
-              () => ElevatedButton(
+                  () => ElevatedButton(
                 onPressed: controller.isPosting.value
                     ? null
                     : controller.createAnnouncement,
@@ -338,6 +437,7 @@ class TeacherView extends GetView<TeacherController> {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
               'My Announcements',
@@ -345,8 +445,9 @@ class TeacherView extends GetView<TeacherController> {
             ),
             const SizedBox(height: 12),
             Obx(() {
-              if (controller.announcements.isEmpty)
+              if (controller.announcements.isEmpty) {
                 return const Text('No announcements');
+              }
               return ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -354,34 +455,68 @@ class TeacherView extends GetView<TeacherController> {
                 itemBuilder: (context, index) {
                   final ann = controller.announcements[index];
                   return ListTile(
-                    title: Text(ann.title),
+                    title: Text(
+                      ann.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(ann.content, maxLines: 2),
+                        Text(
+                          ann.content,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 13),
+                        ),
                         const SizedBox(height: 4),
-                        Row(
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
                           children: [
-                            if (ann.className != null) ...[
-                              Text(
-                                'Class: ${ann.className}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.blue,
+                            if (ann.className != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[50],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'Class: ${ann.className}',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.blue,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                            ],
-                            Text(
-                              _formatDateTime(ann.createdAt),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                _formatDateTime(ann.createdAt),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ],
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 0,
+                      vertical: 8,
                     ),
                   );
                 },
@@ -399,6 +534,7 @@ class TeacherView extends GetView<TeacherController> {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
               'My Classes',
@@ -406,7 +542,9 @@ class TeacherView extends GetView<TeacherController> {
             ),
             const SizedBox(height: 12),
             Obx(() {
-              if (controller.classes.isEmpty) return const Text('No classes');
+              if (controller.classes.isEmpty) {
+                return const Text('No classes');
+              }
               return ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -414,16 +552,45 @@ class TeacherView extends GetView<TeacherController> {
                 itemBuilder: (context, index) {
                   final cls = controller.classes[index];
                   return ListTile(
-                    title: Text(cls.name),
+                    title: Text(
+                      cls.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (cls.description.isNotEmpty) Text(cls.description),
-                        Text(
-                          '${cls.studentCount} students enrolled',
-                          style: const TextStyle(fontSize: 12),
+                        if (cls.description.isNotEmpty)
+                          Text(
+                            cls.description,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green[50],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '${cls.studentCount} students enrolled',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.green[700],
+                            ),
+                          ),
                         ),
                       ],
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 0,
+                      vertical: 8,
                     ),
                   );
                 },
@@ -441,6 +608,7 @@ class TeacherView extends GetView<TeacherController> {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
               'Exercises',
@@ -448,35 +616,82 @@ class TeacherView extends GetView<TeacherController> {
             ),
             const SizedBox(height: 12),
             Obx(() {
-              if (controller.exercises.isEmpty)
+              if (controller.exercises.isEmpty) {
                 return const Text('No exercises');
+              }
               return ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: controller.exercises.length,
                 itemBuilder: (context, index) {
                   final ex = controller.exercises[index];
-                  return ListTile(
-                    title: Text(ex.title),
-                    subtitle: Column(
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(ex.className ?? ''),
-                        if (ex.dueDate != null)
-                          Text(
-                            'Due: ${ex.dueDate}',
-                            style: const TextStyle(fontSize: 12),
+                        // Exercise title - allow 2 lines
+                        Text(
+                          ex.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
                           ),
+                        ),
+                        const SizedBox(height: 4),
+                        // Class name
+                        if (ex.className != null && ex.className!.isNotEmpty)
+                          Text(
+                            ex.className!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        // Due date
+                        if (ex.dueDate != null)
+                          Container(
+                            margin: const EdgeInsets.only(top: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange[50],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'Due: ${ex.dueDate}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.orange[700],
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 8),
+                        // Download button
+                        if (ex.fileUrl != null)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: OutlinedButton.icon(
+                              onPressed: () => Get.snackbar('View', 'Opening file...'),
+                              icon: const Icon(Icons.download, size: 16),
+                              label: const Text(
+                                'Download',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              ),
+                            ),
+                          ),
+                        const Divider(height: 16),
                       ],
                     ),
-                    trailing: ex.fileUrl != null
-                        ? IconButton(
-                            icon: const Icon(Icons.download),
-                            onPressed: () =>
-                                Get.snackbar('View', 'Opening file...'),
-                            tooltip: 'View file',
-                          )
-                        : null,
                   );
                 },
               );
@@ -493,6 +708,7 @@ class TeacherView extends GetView<TeacherController> {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
               'Submissions',
@@ -500,8 +716,9 @@ class TeacherView extends GetView<TeacherController> {
             ),
             const SizedBox(height: 12),
             Obx(() {
-              if (controller.submissions.isEmpty)
+              if (controller.submissions.isEmpty) {
                 return const Text('No submissions');
+              }
               return ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -510,64 +727,130 @@ class TeacherView extends GetView<TeacherController> {
                     : controller.submissions.length,
                 itemBuilder: (context, index) {
                   final sub = controller.submissions[index];
-                  return ListTile(
-                    title: Text(sub.exerciseTitle),
-                    subtitle: Column(
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Student: ${sub.studentName ?? "Student"}'),
-                        Text(
-                          'Submitted: ${_formatDateTime(sub.submittedAt)}',
-                          style: const TextStyle(fontSize: 12),
+                        // Title row
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                sub.exerciseTitle,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Grade badge
+                            if (sub.grade != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[100],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${sub.grade}/20',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue[800],
+                                  ),
+                                ),
+                              )
+                            else
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange[100],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text(
+                                  'Pending',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                        if (sub.grade != null)
-                          Container(
-                            margin: const EdgeInsets.only(top: 4),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
+                        const SizedBox(height: 8),
+                        // Student name
+                        Row(
+                          children: [
+                            const Icon(Icons.person, size: 14, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                sub.studentName ?? 'Student',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 13),
+                              ),
                             ),
-                            decoration: BoxDecoration(
-                              color: Colors.blue[100],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'Grade: ${sub.grade}/20',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          )
-                        else
-                          Container(
-                            margin: const EdgeInsets.only(top: 4),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.orange[100],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              'Pending Grade',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                          ),
-                      ],
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (sub.submissionFileUrl != null)
-                          IconButton(
-                            icon: const Icon(Icons.download),
-                            onPressed: () =>
-                                controller.downloadSubmission(sub.id),
-                            tooltip: 'Download submission',
-                          ),
-                        ElevatedButton(
-                          onPressed: () => controller.openGradingDialog(sub),
-                          child: Text(sub.grade == null ? 'Grade' : 'Edit'),
+                          ],
                         ),
+                        const SizedBox(height: 4),
+                        // Submission date
+                        Row(
+                          children: [
+                            const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Submitted: ${_formatDateTime(sub.submittedAt)}',
+                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        // Action buttons
+                        Row(
+                          children: [
+                            if (sub.submissionFileUrl != null)
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () => controller.downloadSubmission(sub.id),
+                                  icon: const Icon(Icons.download, size: 16),
+                                  label: const Text(
+                                    'Download',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                  ),
+                                ),
+                              ),
+                            if (sub.submissionFileUrl != null) const SizedBox(width: 8),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () => controller.openGradingDialog(sub),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  backgroundColor: sub.grade == null ? Colors.orange : Colors.blue,
+                                ),
+                                child: Text(
+                                  sub.grade == null ? 'Grade' : 'Edit Grade',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Divider(height: 24),
                       ],
                     ),
                   );
@@ -617,7 +900,7 @@ class TeacherView extends GetView<TeacherController> {
                     children: [
                       Expanded(
                         child: Obx(
-                          () => ElevatedButton(
+                              () => ElevatedButton(
                             onPressed: controller.isGrading.value
                                 ? null
                                 : controller.gradeSubmission,

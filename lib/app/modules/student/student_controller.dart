@@ -1,8 +1,8 @@
-import 'dart:html' as html;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';  // ADD THIS
 import '../../data/providers/api_provider.dart';
 import '../../data/services/auth_api.dart';
 import '../../data/services/student_api.dart';
@@ -96,13 +96,16 @@ class StudentController extends GetxController {
     return _studentApi.downloadExerciseUrl(exerciseId);
   }
 
-  void downloadExercise(int exerciseId) {
+  // FIXED: Now works on both web and mobile
+  Future<void> downloadExercise(int exerciseId) async {
     final url = downloadExerciseUrl(exerciseId);
     debugPrint('Download URL: $url');
-    if (kIsWeb) {
-      html.window.open(url, '_blank');
+
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
-      Get.snackbar('Download', 'URL: $url');
+      Get.snackbar('Error', 'Cannot open download link');
     }
   }
 

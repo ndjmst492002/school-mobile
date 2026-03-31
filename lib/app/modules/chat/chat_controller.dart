@@ -10,6 +10,8 @@ import '../../data/models/chat_models.dart';
 class ChatController extends GetxController {
   final ChatApi _chatApi = ChatApi();
 
+  final TextEditingController messageController = TextEditingController();
+
   final contacts = <Contact>[].obs;
   final selectedContact = Rxn<Contact>();
   final messages = <ChatMessage>[].obs;
@@ -17,10 +19,12 @@ class ChatController extends GetxController {
   final isLoading = true.obs;
   final isSending = false.obs;
   final isWsConnected = false.obs;
+  final connectionStatus = ''.obs;
 
   WebSocketChannel? _wsChannel;
   StreamSubscription? _wsSubscription;
   Timer? _reconnectTimer;
+  int _reconnectAttempts = 0;
 
   AuthService get _auth => Get.find<AuthService>();
   int get currentUserId => _auth.userId;
@@ -28,29 +32,28 @@ class ChatController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    debugPrint('ChatController onInit - role: ${_auth.role}');
+    debugPrint('ChatController onInit - userId: $currentUserId');
+
+    messageController.addListener(() {
+      updateNewMessage(messageController.text);
+    });
+
     loadContacts();
   }
 
   @override
   void onClose() {
+    messageController.dispose();
     disconnectWebSocket();
+    _reconnectTimer?.cancel();
     super.onClose();
   }
 
   Future<void> loadContacts() async {
     isLoading.value = true;
     try {
-      final auth = Get.find<AuthService>();
-      debugPrint('Current user role: ${auth.role}, userId: ${auth.userId}');
-
       final data = await _chatApi.getContacts();
       debugPrint('Loaded ${data.length} contacts');
-      for (var c in data) {
-        debugPrint(
-          'Contact: id=${c.id}, userId=${c.userId}, name=${c.fullName}, role=${c.role}',
-        );
-      }
       contacts.value = data;
     } catch (e) {
       debugPrint('Error loading contacts: $e');
@@ -63,9 +66,10 @@ class ChatController extends GetxController {
   Future<void> loadMessages(int contactId) async {
     try {
       final data = await _chatApi.getMessages(contactId);
-      messages.value = data;
+      messages.value = data.reversed.toList();
+      debugPrint('Loaded ${data.length} messages for contact $contactId');
     } catch (e) {
-      // Handle error
+      debugPrint('Error loading messages: $e');
     }
   }
 
@@ -77,33 +81,87 @@ class ChatController extends GetxController {
 
   Future<void> connectWebSocket() async {
     disconnectWebSocket();
+
     try {
+      connectionStatus.value = 'Connecting...';
+      debugPrint('=== CONNECTING TO WEBSOCKET ===');
+
       final ticket = await _chatApi.getWsTicket();
-      _wsChannel = WebSocketChannel.connect(
-        Uri.parse('ws://localhost:8000/ws/chat/?ticket=$ticket'),
-      );
+      debugPrint('Got ticket: $ticket');
+
+      final baseUrl = ApiProvider.baseUrl;
+      final cleanBaseUrl = baseUrl
+          .replaceFirst('/api', '')
+          .replaceFirst('http', 'ws');
+      debugPrint('Clean base URL: $cleanBaseUrl');
+
+      final wsUrl = '$cleanBaseUrl/ws/chat/?ticket=$ticket';
+      debugPrint('WebSocket URL: $wsUrl');
+
+      _wsChannel = WebSocketChannel.connect(Uri.parse(wsUrl));
+
+      // Mark as connected immediately since server accepts the connection
+      isWsConnected.value = true;
+      connectionStatus.value = '';
+      _reconnectAttempts = 0;
+      debugPrint('✅ WebSocket connected successfully');
 
       _wsSubscription = _wsChannel!.stream.listen(
-        (data) {
+            (data) {
+          debugPrint('WebSocket received data: $data');
           _handleWsMessage(data);
         },
         onError: (error) {
+          debugPrint('❌ WebSocket error: $error');
           isWsConnected.value = false;
+          connectionStatus.value = 'Connection lost';
+          _scheduleReconnect();
         },
         onDone: () {
+          debugPrint('❌ WebSocket disconnected');
           isWsConnected.value = false;
+          connectionStatus.value = 'Disconnected';
+          _scheduleReconnect();
         },
       );
-      isWsConnected.value = true;
+
     } catch (e) {
+      debugPrint('❌ WebSocket connection failed: $e');
+      connectionStatus.value = 'Connection failed';
       isWsConnected.value = false;
+      _scheduleReconnect();
     }
+  }
+
+  void _scheduleReconnect() {
+    if (selectedContact.value == null) return;
+    if (_reconnectTimer?.isActive == true) return;
+
+    if (_reconnectAttempts >= 10) {
+      debugPrint('Max reconnection attempts reached');
+      connectionStatus.value = '';
+      return;
+    }
+
+    final delay = Duration(seconds: [2, 4, 8, 16, 30][_reconnectAttempts.clamp(0, 4)]);
+    _reconnectAttempts++;
+
+    debugPrint('Reconnecting in ${delay.inSeconds}s (attempt $_reconnectAttempts)');
+    connectionStatus.value = 'Reconnecting...';
+
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(delay, () {
+      if (selectedContact.value != null) {
+        connectWebSocket();
+      }
+    });
   }
 
   void _handleWsMessage(dynamic data) {
     try {
       final decoded = jsonDecode(data as String);
       final type = decoded['type'];
+      debugPrint('Received WebSocket message type: $type');
 
       if (type == 'message_sent' || type == 'new_message') {
         final msgData = decoded['message'];
@@ -112,56 +170,68 @@ class ChatController extends GetxController {
         final contactUserId = selectedContact.value?.userId;
         if (contactUserId == null) return;
 
-        final condition1 =
-            msg.sender == currentUserId && msg.receiver == contactUserId;
-        final condition2 =
-            msg.sender == contactUserId && msg.receiver == currentUserId;
-
-        if (condition1 || condition2) {
+        if ((msg.sender == currentUserId && msg.receiver == contactUserId) ||
+            (msg.sender == contactUserId && msg.receiver == currentUserId)) {
           final exists = messages.any((m) => m.id == msg.id);
           if (!exists) {
             messages.add(msg);
+            debugPrint('Added message: ${msg.content}');
           }
         }
       }
     } catch (e) {
-      // Handle parse error
+      debugPrint('Error handling WebSocket message: $e');
     }
   }
 
   void disconnectWebSocket() {
     _wsSubscription?.cancel();
-    _wsChannel?.sink.close();
+    try {
+      _wsChannel?.sink.close();
+    } catch (e) {}
     _wsChannel = null;
     _wsSubscription = null;
-    _reconnectTimer?.cancel();
-    isWsConnected.value = false;
   }
 
   Future<void> sendMessage() async {
-    if (newMessage.value.isEmpty || selectedContact.value == null) return;
+    final messageText = newMessage.value.trim();
+    if (messageText.isEmpty || selectedContact.value == null) return;
 
     isSending.value = true;
+
     try {
       final contactUserId = selectedContact.value!.userId;
-      debugPrint(
-        'Sending to userId: $contactUserId, message: ${newMessage.value}',
-      );
 
-      final ws = _wsChannel;
-      if (ws != null) {
-        ws.sink.add(
-          '{"type":"chat_message","receiver_id":$contactUserId,"content":"${newMessage.value}"}',
-        );
+      if (_wsChannel != null && isWsConnected.value) {
+        final message = jsonEncode({
+          'type': 'chat_message',
+          'receiver_id': contactUserId,
+          'content': messageText,
+        });
+        _wsChannel!.sink.add(message);
+        debugPrint('Message sent via WebSocket');
+
+        await Future.delayed(const Duration(milliseconds: 500));
+        await loadMessages(contactUserId);
+
         newMessage.value = '';
+        messageController.clear();
       } else {
-        await _chatApi.sendMessage(contactUserId, newMessage.value);
-        loadMessages(contactUserId);
+        debugPrint('WebSocket not connected, using REST API');
+        await _chatApi.sendMessage(contactUserId, messageText);
+        await loadMessages(contactUserId);
+
         newMessage.value = '';
+        messageController.clear();
       }
     } catch (e) {
-      debugPrint('Error sending message: $e');
-      Get.snackbar('Error', 'Failed to send message: $e');
+      debugPrint('ERROR sending message: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to send message',
+        duration: const Duration(seconds: 2),
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       isSending.value = false;
     }
@@ -178,7 +248,17 @@ class ChatController extends GetxController {
   String formatTime(String dateStr) {
     try {
       final date = DateTime.parse(dateStr);
-      return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final messageDate = DateTime(date.year, date.month, date.day);
+
+      if (messageDate == today) {
+        return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+      } else if (messageDate == today.subtract(const Duration(days: 1))) {
+        return 'Yesterday';
+      } else {
+        return '${date.day}/${date.month}/${date.year}';
+      }
     } catch (e) {
       return '';
     }

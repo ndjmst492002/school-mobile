@@ -90,41 +90,49 @@ class ParentView extends GetView<ParentController> {
 
   Widget _buildStatsCards() {
     return Obx(
-      () => GridView.count(
-        crossAxisCount: 4,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        childAspectRatio: 2,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
+          () => Wrap(
+        spacing: 8,
+        runSpacing: 8,
         children: [
-          _buildStatCard(
-            'My Children',
-            '${controller.children.length}',
-            'Enrolled students',
-            Colors.blue,
-            Icons.group,
+          SizedBox(
+            width: (MediaQuery.of(Get.context!).size.width - 40) / 2,  // Half width minus padding
+            child: _buildStatCard(
+              'My Children',
+              '${controller.children.length}',
+              'Enrolled students',
+              Colors.blue,
+              Icons.group,
+            ),
           ),
-          _buildStatCard(
-            'Average Progress',
-            controller.children.isNotEmpty ? 'Good' : 'N/A',
-            'Overall status',
-            Colors.green,
-            Icons.trending_up,
+          SizedBox(
+            width: (MediaQuery.of(Get.context!).size.width - 40) / 2,
+            child: _buildStatCard(
+              'Average Progress',
+              controller.children.isNotEmpty ? 'Good' : 'N/A',
+              'Overall status',
+              Colors.green,
+              Icons.trending_up,
+            ),
           ),
-          _buildStatCard(
-            'Enrolled Classes',
-            controller.children.isNotEmpty ? 'Active' : 'N/A',
-            'Class status',
-            Colors.purple,
-            Icons.menu_book,
+          SizedBox(
+            width: (MediaQuery.of(Get.context!).size.width - 40) / 2,
+            child: _buildStatCard(
+              'Enrolled Classes',
+              controller.children.isNotEmpty ? 'Active' : 'N/A',
+              'Class status',
+              Colors.purple,
+              Icons.menu_book,
+            ),
           ),
-          _buildStatCard(
-            'Notifications',
-            '${controller.children.isNotEmpty ? controller.children.length : 0}',
-            'Children linked',
-            Colors.orange,
-            Icons.notifications,
+          SizedBox(
+            width: (MediaQuery.of(Get.context!).size.width - 40) / 2,
+            child: _buildStatCard(
+              'Notifications',
+              '${controller.children.isNotEmpty ? controller.children.length : 0}',
+              'Children linked',
+              Colors.orange,
+              Icons.notifications,
+            ),
           ),
         ],
       ),
@@ -132,25 +140,29 @@ class ParentView extends GetView<ParentController> {
   }
 
   Widget _buildStatCard(
-    String title,
-    String value,
-    String subtitle,
-    Color color,
-    IconData icon,
-  ) {
+      String title,
+      String value,
+      String subtitle,
+      Color color,
+      IconData icon,
+      ) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
                 ),
                 Icon(icon, size: 16, color: Colors.grey),
               ],
@@ -158,6 +170,8 @@ class ParentView extends GetView<ParentController> {
             const SizedBox(height: 4),
             Text(
               value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -166,6 +180,8 @@ class ParentView extends GetView<ParentController> {
             ),
             Text(
               subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 10, color: Colors.grey),
             ),
           ],
@@ -180,6 +196,7 @@ class ParentView extends GetView<ParentController> {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
               'Announcements',
@@ -187,8 +204,9 @@ class ParentView extends GetView<ParentController> {
             ),
             const SizedBox(height: 12),
             Obx(() {
-              if (controller.announcements.isEmpty)
+              if (controller.announcements.isEmpty) {
                 return const Text('No announcements');
+              }
               return ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -202,24 +220,48 @@ class ParentView extends GetView<ParentController> {
                       padding: const EdgeInsets.all(12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             childAnn.childName,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
                           const SizedBox(height: 4),
-                          Text('From: ${ann.teacherName ?? "Teacher"}'),
+                          Text(
+                            'From: ${ann.teacherName ?? "Teacher"}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12),
+                          ),
                           const SizedBox(height: 4),
                           Text(
                             ann.title,
-                            style: const TextStyle(fontWeight: FontWeight.w500),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                            ),
                           ),
-                          Text(ann.content),
+                          const SizedBox(height: 4),
+                          Text(
+                            ann.content,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12),
+                          ),
                           const SizedBox(height: 4),
                           Text(
                             _formatDateTime(ann.createdAt),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 12,
+                              fontSize: 11,
                               color: Colors.grey,
                             ),
                           ),
@@ -242,6 +284,7 @@ class ParentView extends GetView<ParentController> {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
               'My Children',
@@ -249,8 +292,9 @@ class ParentView extends GetView<ParentController> {
             ),
             const SizedBox(height: 12),
             Obx(() {
-              if (controller.children.isEmpty)
+              if (controller.children.isEmpty) {
                 return const Text('No children linked');
+              }
               return ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -260,19 +304,25 @@ class ParentView extends GetView<ParentController> {
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: Padding(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(10),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                child.fullName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
+                              Expanded(
+                                child: Text(
+                                  child.fullName,
+                                  softWrap: true,  // Allow wrapping
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
                                 ),
                               ),
+                              const SizedBox(width: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
@@ -284,7 +334,7 @@ class ParentView extends GetView<ParentController> {
                                 ),
                                 child: const Text(
                                   'Active',
-                                  style: TextStyle(fontSize: 12),
+                                  style: TextStyle(fontSize: 11),
                                 ),
                               ),
                             ],
@@ -293,6 +343,8 @@ class ParentView extends GetView<ParentController> {
                             const SizedBox(height: 4),
                             Text(
                               'Enrolled: ${_formatDate(child.enrollmentDate!)}',
+                              softWrap: true,
+                              style: const TextStyle(fontSize: 12),
                             ),
                           ],
                           const SizedBox(height: 8),
@@ -350,9 +402,20 @@ class ParentView extends GetView<ParentController> {
   Widget _buildInfoChip(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-        Text(value, style: const TextStyle(fontSize: 12)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10, color: Colors.grey),
+        ),
+        SizedBox(
+          width: 120,  // Fixed width to prevent overflow
+          child: Text(
+            value,
+            softWrap: true,  // Allow wrapping
+            style: const TextStyle(fontSize: 12),
+          ),
+        ),
       ],
     );
   }
@@ -363,6 +426,7 @@ class ParentView extends GetView<ParentController> {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
               'Important Information',
@@ -370,10 +434,11 @@ class ParentView extends GetView<ParentController> {
             ),
             const SizedBox(height: 12),
             Obx(() {
-              if (controller.children.isEmpty)
+              if (controller.children.isEmpty) {
                 return const Text(
                   'Contact the school administration to link your children to your account.',
                 );
+              }
               return ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -386,10 +451,16 @@ class ParentView extends GetView<ParentController> {
                       padding: const EdgeInsets.all(12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             child.fullName,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           _buildInfoRow(
@@ -425,13 +496,15 @@ class ParentView extends GetView<ParentController> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 16, color: color),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              softWrap: true,  // Allow wrapping to next line
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
             ),
           ),
         ],
