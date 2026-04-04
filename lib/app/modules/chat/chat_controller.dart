@@ -57,6 +57,7 @@ class ChatController extends GetxController {
       final data = await _chatApi.getContacts();
       debugPrint('Loaded ${data.length} contacts');
       contacts.value = data;
+      _notifyParentController();
     } catch (e) {
       debugPrint('Error loading contacts: $e');
       Get.snackbar('Error', 'Failed to load contacts: $e');
@@ -195,10 +196,22 @@ class ChatController extends GetxController {
   }
 
   void _updateUnreadCountForContact(int contactUserId) {
+    debugPrint(
+      '_updateUnreadCountForContact called for userId: $contactUserId',
+    );
+    debugPrint(
+      'Current contacts: ${contacts.map((c) => '${c.userId}:${c.unreadCount}').toList()}',
+    );
+
     final contactIndex = contacts.indexWhere((c) => c.userId == contactUserId);
+    debugPrint('Contact index: $contactIndex');
+
     if (contactIndex != -1) {
       final contact = contacts[contactIndex];
       final newCount = (contact.unreadCount ?? 0) + 1;
+      debugPrint(
+        'Updating unread count from ${contact.unreadCount} to $newCount',
+      );
       contacts[contactIndex] = Contact(
         id: contact.id,
         userId: contact.userId,
@@ -207,6 +220,8 @@ class ChatController extends GetxController {
         unreadCount: newCount,
       );
       _notifyParentController();
+    } else {
+      debugPrint('Contact not found in contacts list!');
     }
   }
 
@@ -215,17 +230,25 @@ class ChatController extends GetxController {
       0,
       (sum, c) => sum + (c.unreadCount ?? 0),
     );
+    debugPrint('Total unread count: $totalUnread');
+
     if (Get.isRegistered<TeacherController>()) {
       try {
         final teacherController = Get.find<TeacherController>();
         teacherController.updateUnreadMessageCount(totalUnread);
-      } catch (e) {}
+        debugPrint('Updated TeacherController unread count');
+      } catch (e) {
+        debugPrint('TeacherController error: $e');
+      }
     }
     if (Get.isRegistered<ParentController>()) {
       try {
         final parentController = Get.find<ParentController>();
         parentController.updateUnreadMessageCount(totalUnread);
-      } catch (e) {}
+        debugPrint('Updated ParentController unread count');
+      } catch (e) {
+        debugPrint('ParentController error: $e');
+      }
     }
   }
 

@@ -7,7 +7,8 @@ import 'package:get/get.dart';
 class ApiProvider extends GetxService {
   late final dio_pkg.Dio _dio;
 
-  static const String baseUrl = 'http://192.168.1.4:8000/api';
+  //static const String baseUrl = 'http://192.168.1.4:8000/api';
+  static const String baseUrl = 'http://localhost:8000/api';
 
   Future<ApiProvider> init() async {
     _dio = dio_pkg.Dio(
@@ -19,25 +20,22 @@ class ApiProvider extends GetxService {
       ),
     );
 
-    var cookieJar = CookieJar();
-    _dio.interceptors.add(CookieManager(cookieJar));
+    // Only use cookie manager on mobile, not on web
+    if (!kIsWeb) {
+      var cookieJar = CookieJar();
+      _dio.interceptors.add(CookieManager(cookieJar));
+    }
 
     _dio.interceptors.add(
       dio_pkg.InterceptorsWrapper(
         onRequest: (options, handler) {
-          debugPrint('REQUEST: ${options.method} ${options.uri}');
+          // For web, ensure credentials are included
+          if (kIsWeb) {
+            options.extra['withCredentials'] = true;
+          }
           return handler.next(options);
         },
-        onResponse: (response, handler) {
-          debugPrint(
-            'RESPONSE: ${response.statusCode} ${response.requestOptions.uri}',
-          );
-          return handler.next(response);
-        },
         onError: (error, handler) async {
-          debugPrint(
-            'ERROR: ${error.response?.statusCode} ${error.requestOptions.uri}',
-          );
           if (error.response?.statusCode == 401) {
             Get.find<AuthService>().logout();
           }

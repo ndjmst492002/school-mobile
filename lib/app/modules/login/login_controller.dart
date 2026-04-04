@@ -42,6 +42,14 @@ class LoginController extends GetxController {
       debugPrint('Login response: $response');
 
       if (response.containsKey('user') && response.containsKey('role')) {
+        // Save token for web if present in response
+        if (response.containsKey('token')) {
+          final apiProvider = Get.find<ApiProvider>();
+          apiProvider.dio.options.headers['Authorization'] =
+              'Bearer ${response['token']}';
+          debugPrint('Saved token for web requests');
+        }
+
         final role = response['role'] as String;
         _auth.setUser(response['user'], role: role);
         _auth.setLoading(false);

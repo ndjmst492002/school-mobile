@@ -18,34 +18,7 @@ class TeacherView extends GetView<TeacherController> {
         appBar: AppBar(
           title: const Text('Teacher Dashboard'),
           actions: [
-            Obx(() {
-              final hasUnread = controller.unreadMessageCount.value > 0;
-              return Stack(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.chat),
-                    onPressed: () {
-                      Get.put(ChatController());
-                      controller.toggleChat();
-                      controller.updateUnreadMessageCount(0);
-                    },
-                  ),
-                  if (hasUnread)
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            }),
+            _buildChatIcon(),
             IconButton(
               icon: const Icon(Icons.logout),
               onPressed: controller.logout,
@@ -54,12 +27,43 @@ class TeacherView extends GetView<TeacherController> {
         ),
         body: controller.showChat.value
             ? ChatView(
-                onClose: () {
-                  Get.delete<ChatController>();
-                  controller.toggleChat();
-                },
-              )
+          onClose: () {
+            Get.delete<ChatController>();
+            controller.toggleChat();
+          },
+        )
             : _buildContent(),
+      );
+    });
+  }
+
+  Widget _buildChatIcon() {
+    return Obx(() {
+      final hasUnread = controller.unreadMessageCount.value > 0;
+      return Stack(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chat),
+            onPressed: () {
+              Get.put(ChatController());
+              controller.toggleChat();
+              controller.updateUnreadMessageCount(0);
+            },
+          ),
+          if (hasUnread)
+            Positioned(
+              right: 8,
+              top: 8,
+              child: Container(
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
       );
     });
   }
@@ -74,7 +78,7 @@ class TeacherView extends GetView<TeacherController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Obx(
-              () => Text(
+                  () => Text(
                 'Welcome, ${controller.userName}',
                 style: const TextStyle(fontSize: 18),
               ),
@@ -82,22 +86,77 @@ class TeacherView extends GetView<TeacherController> {
             const SizedBox(height: 16),
             _buildStatsCards(),
             const SizedBox(height: 24),
-            _buildQuickActions(),
-            if (controller.showAttendanceForm.value) ...[
-              const SizedBox(height: 24),
-              _buildAttendanceForm(),
-            ],
-            const SizedBox(height: 24),
-            _buildAnnouncementsCard(),
-            const SizedBox(height: 24),
+
+            // Announcement section
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(child: _buildClassesCard()),
-                const SizedBox(width: 16),
-                Expanded(child: _buildExercisesCard()),
+                const Text(
+                  'Announcements',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                _buildAnnouncementButton(),
               ],
             ),
+            const SizedBox(height: 12),
+            // Form appears immediately after the button (below the button)
+            if (controller.showAnnouncementForm.value) ...[
+              _buildAnnouncementForm(),
+              const SizedBox(height: 12),
+            ],
+            _buildAnnouncementsCard(),
+
+            const SizedBox(height: 24),
+
+            // Classes section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'My Classes',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                _buildAttendanceButton(),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Form appears immediately after the button (below the button)
+            if (controller.showAttendanceForm.value) ...[
+              _buildAttendanceForm(),
+              const SizedBox(height: 12),
+            ],
+            _buildClassesCard(),
+
+            const SizedBox(height: 24),
+
+            // Exercises section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Exercises',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                _buildUploadButton(),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Form appears immediately after the button (below the button)
+            if (controller.showUploadForm.value) ...[
+              _buildUploadForm(),
+              const SizedBox(height: 12),
+            ],
+            _buildExercisesOnlyCard(),
+
             const SizedBox(height: 24),
             _buildSubmissionsCard(),
             const SizedBox(height: 24),
@@ -108,9 +167,60 @@ class TeacherView extends GetView<TeacherController> {
     );
   }
 
+  Widget _buildAnnouncementButton() {
+    return Obx(
+          () => ElevatedButton.icon(
+        onPressed: controller.toggleAnnouncementForm,
+        icon: const Icon(Icons.campaign, size: 18),
+        label: Text(
+          controller.showAnnouncementForm.value ? 'Cancel' : 'Create Announcement',
+          style: const TextStyle(fontSize: 12),
+        ),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          minimumSize: const Size(0, 36),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAttendanceButton() {
+    return Obx(
+          () => ElevatedButton.icon(
+        onPressed: controller.toggleAttendanceForm,
+        icon: const Icon(Icons.people, size: 18),
+        label: Text(
+          controller.showAttendanceForm.value ? 'Cancel' : 'Mark Attendance',
+          style: const TextStyle(fontSize: 12),
+        ),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          minimumSize: const Size(0, 36),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUploadButton() {
+    return Obx(
+          () => ElevatedButton.icon(
+        onPressed: controller.toggleUploadForm,
+        icon: const Icon(Icons.upload, size: 18),
+        label: Text(
+          controller.showUploadForm.value ? 'Cancel' : 'Upload Exercise',
+          style: const TextStyle(fontSize: 12),
+        ),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          minimumSize: const Size(0, 36),
+        ),
+      ),
+    );
+  }
+
   Widget _buildStatsCards() {
     return Obx(
-      () => SingleChildScrollView(
+          () => SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
@@ -142,59 +252,6 @@ class TeacherView extends GetView<TeacherController> {
         ),
       ),
       label: Text(label),
-    );
-  }
-
-  Widget _buildQuickActions() {
-    return Obx(
-      () => Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: controller.toggleUploadForm,
-                  icon: const Icon(Icons.upload),
-                  label: Text(
-                    controller.showUploadForm.value
-                        ? 'Cancel'
-                        : 'Upload Exercise',
-                    style: const TextStyle(fontSize: 11.9),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: controller.toggleAnnouncementForm,
-                  icon: const Icon(Icons.campaign),
-                  label: Text(
-                    controller.showAnnouncementForm.value
-                        ? 'Cancel'
-                        : 'Announcement',
-                    style: const TextStyle(fontSize: 11.9),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: controller.toggleAttendanceForm,
-                  icon: const Icon(Icons.people),
-                  label: Text(
-                    controller.showAttendanceForm.value
-                        ? 'Cancel'
-                        : 'Attendance',
-                    style: const TextStyle(fontSize: 11.9),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (controller.showUploadForm.value) _buildUploadForm(),
-          if (controller.showAnnouncementForm.value) _buildAnnouncementForm(),
-        ],
-      ),
     );
   }
 
@@ -232,7 +289,7 @@ class TeacherView extends GetView<TeacherController> {
                   );
                   if (date != null) {
                     controller.uploadDueDateController.text =
-                        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                    '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
                   }
                 },
                 child: AbsorbPointer(
@@ -253,7 +310,7 @@ class TeacherView extends GetView<TeacherController> {
                           );
                           if (date != null) {
                             controller.uploadDueDateController.text =
-                                '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
                           }
                         },
                       ),
@@ -264,7 +321,7 @@ class TeacherView extends GetView<TeacherController> {
             ),
             const SizedBox(height: 8),
             Obx(
-              () => DropdownButtonFormField<String>(
+                  () => DropdownButtonFormField<String>(
                 value: controller.uploadClassId.value.isEmpty
                     ? null
                     : controller.uploadClassId.value,
@@ -272,16 +329,15 @@ class TeacherView extends GetView<TeacherController> {
                 items: controller.classes
                     .map(
                       (cls) => DropdownMenuItem(
-                        value: cls.id.toString(),
-                        child: Text('${cls.name} (${cls.studentCount})'),
-                      ),
-                    )
+                    value: cls.id.toString(),
+                    child: Text('${cls.name} (${cls.studentCount})'),
+                  ),
+                )
                     .toList(),
                 onChanged: (v) => controller.updateUploadClassId(v ?? ''),
               ),
             ),
             const SizedBox(height: 12),
-            // File display section
             Obx(() {
               final selectedFile = controller.selectedFile.value;
               return Container(
@@ -330,7 +386,6 @@ class TeacherView extends GetView<TeacherController> {
               );
             }),
             const SizedBox(height: 12),
-            // Buttons
             LayoutBuilder(
               builder: (context, constraints) {
                 final isSmallScreen = constraints.maxWidth < 400;
@@ -351,7 +406,7 @@ class TeacherView extends GetView<TeacherController> {
                       ),
                       const SizedBox(height: 8),
                       Obx(
-                        () => SizedBox(
+                            () => SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: controller.isUploading.value
@@ -388,7 +443,7 @@ class TeacherView extends GetView<TeacherController> {
                       SizedBox(
                         width: 140,
                         child: Obx(
-                          () => ElevatedButton(
+                              () => ElevatedButton(
                             onPressed: controller.isUploading.value
                                 ? null
                                 : controller.uploadExercise,
@@ -440,7 +495,7 @@ class TeacherView extends GetView<TeacherController> {
             ),
             const SizedBox(height: 8),
             Obx(
-              () => DropdownButtonFormField<String>(
+                  () => DropdownButtonFormField<String>(
                 value: controller.announcementClassId.value.isEmpty
                     ? null
                     : controller.announcementClassId.value,
@@ -450,7 +505,7 @@ class TeacherView extends GetView<TeacherController> {
                 items: [
                   const DropdownMenuItem(value: '', child: Text('All Classes')),
                   ...controller.classes.map(
-                    (cls) => DropdownMenuItem(
+                        (cls) => DropdownMenuItem(
                       value: cls.id.toString(),
                       child: Text(cls.name),
                     ),
@@ -461,7 +516,7 @@ class TeacherView extends GetView<TeacherController> {
             ),
             const SizedBox(height: 12),
             Obx(
-              () => ElevatedButton(
+                  () => ElevatedButton(
                 onPressed: controller.isPosting.value
                     ? null
                     : controller.createAnnouncement,
@@ -488,7 +543,7 @@ class TeacherView extends GetView<TeacherController> {
             ),
             const SizedBox(height: 12),
             Obx(
-              () => DropdownButtonFormField<String>(
+                  () => DropdownButtonFormField<String>(
                 value: controller.attendanceClassId.value.isEmpty
                     ? null
                     : controller.attendanceClassId.value,
@@ -496,10 +551,10 @@ class TeacherView extends GetView<TeacherController> {
                 items: controller.classes
                     .map(
                       (cls) => DropdownMenuItem(
-                        value: cls.id.toString(),
-                        child: Text('${cls.name} (${cls.studentCount})'),
-                      ),
-                    )
+                    value: cls.id.toString(),
+                    child: Text('${cls.name} (${cls.studentCount})'),
+                  ),
+                )
                     .toList(),
                 onChanged: (v) {
                   controller.updateAttendanceClassId(v ?? '');
@@ -522,7 +577,7 @@ class TeacherView extends GetView<TeacherController> {
                   );
                   if (date != null) {
                     controller.attendanceDateController.text =
-                        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                    '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
                   }
                 },
                 child: AbsorbPointer(
@@ -546,10 +601,10 @@ class TeacherView extends GetView<TeacherController> {
                       : () => controller.loadAttendance(),
                   icon: controller.isLoadingAttendance.value
                       ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                       : const Icon(Icons.people),
                   label: Text(
                     controller.isLoadingAttendance.value
@@ -563,7 +618,7 @@ class TeacherView extends GetView<TeacherController> {
             const SizedBox(height: 16),
             Obx(() {
               final selectedClass = controller.classes.firstWhereOrNull(
-                (c) => c.id.toString() == controller.attendanceClassId.value,
+                    (c) => c.id.toString() == controller.attendanceClassId.value,
               );
               if (selectedClass == null ||
                   selectedClass.students == null ||
@@ -631,7 +686,7 @@ class TeacherView extends GetView<TeacherController> {
                   }).toList(),
                   const SizedBox(height: 12),
                   Obx(
-                    () => ElevatedButton(
+                        () => ElevatedButton(
                       onPressed: controller.isSavingAttendance.value
                           ? null
                           : controller.saveAttendance,
@@ -748,95 +803,89 @@ class TeacherView extends GetView<TeacherController> {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'My Announcements',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 12),
-            Obx(() {
-              if (controller.announcements.isEmpty) {
-                return const Text('No announcements');
-              }
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: controller.announcements.length,
-                itemBuilder: (context, index) {
-                  final ann = controller.announcements[index];
-                  return ListTile(
-                    title: Text(
-                      ann.title,
-                      maxLines: 1,
+        child: Obx(() {
+          if (controller.announcements.isEmpty) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: Text('No announcements yet'),
+              ),
+            );
+          }
+          return ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: controller.announcements.length,
+            itemBuilder: (context, index) {
+              final ann = controller.announcements[index];
+              return ListTile(
+                title: Text(
+                  ann.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      ann.content,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      style: const TextStyle(fontSize: 13),
                     ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
                       children: [
-                        Text(
-                          ann.content,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                        const SizedBox(height: 4),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 4,
-                          children: [
-                            if (ann.className != null)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue[50],
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  'Class: ${ann.className}',
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.blue,
-                                  ),
-                                ),
-                              ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                _formatDateTime(ann.createdAt),
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey,
-                                ),
+                        if (ann.className != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[50],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'Class: ${ann.className}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.blue,
                               ),
                             ),
-                          ],
+                          ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            _formatDateTime(ann.createdAt),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 0,
-                      vertical: 8,
-                    ),
-                  );
-                },
+                  ],
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 0,
+                  vertical: 8,
+                ),
               );
-            }),
-          ],
-        ),
+            },
+          );
+        }),
       ),
     );
   }
@@ -845,176 +894,160 @@ class TeacherView extends GetView<TeacherController> {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'My Classes',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 12),
-            Obx(() {
-              if (controller.classes.isEmpty) {
-                return const Text('No classes');
-              }
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: controller.classes.length,
-                itemBuilder: (context, index) {
-                  final cls = controller.classes[index];
-                  return ListTile(
-                    title: Text(
-                      cls.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (cls.description.isNotEmpty)
-                          Text(
-                            cls.description,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.green[50],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            '${cls.studentCount} students enrolled',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.green[700],
-                            ),
-                          ),
+        child: Obx(() {
+          if (controller.classes.isEmpty) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: Text('No classes assigned'),
+              ),
+            );
+          }
+          return ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: controller.classes.length,
+            itemBuilder: (context, index) {
+              final cls = controller.classes[index];
+              return ListTile(
+                title: Text(
+                  cls.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (cls.description.isNotEmpty)
+                      Text(
+                        cls.description,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green[50],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '${cls.studentCount} students enrolled',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.green[700],
                         ),
-                      ],
+                      ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 0,
-                      vertical: 8,
-                    ),
-                  );
-                },
+                  ],
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 0,
+                  vertical: 8,
+                ),
               );
-            }),
-          ],
-        ),
+            },
+          );
+        }),
       ),
     );
   }
 
-  Widget _buildExercisesCard() {
+  Widget _buildExercisesOnlyCard() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Exercises',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 12),
-            Obx(() {
-              if (controller.exercises.isEmpty) {
-                return const Text('No exercises');
-              }
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: controller.exercises.length,
-                itemBuilder: (context, index) {
-                  final ex = controller.exercises[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Exercise title - allow 2 lines
-                        Text(
-                          ex.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
+        child: Obx(() {
+          if (controller.exercises.isEmpty) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: Text('No exercises uploaded yet'),
+              ),
+            );
+          }
+          return ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: controller.exercises.length,
+            itemBuilder: (context, index) {
+              final ex = controller.exercises[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      ex.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    if (ex.className != null && ex.className!.isNotEmpty)
+                      Text(
+                        ex.className!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    if (ex.dueDate != null)
+                      Container(
+                        margin: const EdgeInsets.only(top: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange[50],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Due: ${ex.dueDate}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.orange[700],
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        // Class name
-                        if (ex.className != null && ex.className!.isNotEmpty)
-                          Text(
-                            ex.className!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
+                      ),
+                    const SizedBox(height: 8),
+                    if (ex.fileUrl != null)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: OutlinedButton.icon(
+                          onPressed: () =>
+                              Get.snackbar('View', 'Opening file...'),
+                          icon: const Icon(Icons.download, size: 16),
+                          label: const Text(
+                            'Download',
+                            style: TextStyle(fontSize: 12),
                           ),
-                        // Due date
-                        if (ex.dueDate != null)
-                          Container(
-                            margin: const EdgeInsets.only(top: 4),
+                          style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.orange[50],
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              'Due: ${ex.dueDate}',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.orange[700],
-                              ),
+                              horizontal: 12,
+                              vertical: 8,
                             ),
                           ),
-                        const SizedBox(height: 8),
-                        // Download button
-                        if (ex.fileUrl != null)
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: OutlinedButton.icon(
-                              onPressed: () =>
-                                  Get.snackbar('View', 'Opening file...'),
-                              icon: const Icon(Icons.download, size: 16),
-                              label: const Text(
-                                'Download',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                              ),
-                            ),
-                          ),
-                        const Divider(height: 16),
-                      ],
-                    ),
-                  );
-                },
+                        ),
+                      ),
+                    const Divider(height: 16),
+                  ],
+                ),
               );
-            }),
-          ],
-        ),
+            },
+          );
+        }),
       ),
     );
   }
@@ -1034,7 +1067,12 @@ class TeacherView extends GetView<TeacherController> {
             const SizedBox(height: 12),
             Obx(() {
               if (controller.submissions.isEmpty) {
-                return const Text('No submissions');
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Text('No submissions'),
+                  ),
+                );
               }
               return ListView.builder(
                 shrinkWrap: true,
@@ -1049,7 +1087,6 @@ class TeacherView extends GetView<TeacherController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Title row
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -1065,7 +1102,6 @@ class TeacherView extends GetView<TeacherController> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            // Grade badge
                             if (sub.grade != null)
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -1106,7 +1142,6 @@ class TeacherView extends GetView<TeacherController> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        // Student name
                         Row(
                           children: [
                             const Icon(
@@ -1126,7 +1161,6 @@ class TeacherView extends GetView<TeacherController> {
                           ],
                         ),
                         const SizedBox(height: 4),
-                        // Submission date
                         Row(
                           children: [
                             const Icon(
@@ -1145,7 +1179,6 @@ class TeacherView extends GetView<TeacherController> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        // Action buttons
                         Row(
                           children: [
                             if (sub.submissionFileUrl != null)
@@ -1237,7 +1270,7 @@ class TeacherView extends GetView<TeacherController> {
                     children: [
                       Expanded(
                         child: Obx(
-                          () => ElevatedButton(
+                              () => ElevatedButton(
                             onPressed: controller.isGrading.value
                                 ? null
                                 : controller.gradeSubmission,
@@ -1263,15 +1296,6 @@ class TeacherView extends GetView<TeacherController> {
         ),
       );
     });
-  }
-
-  String _formatDate(String dateStr) {
-    try {
-      final date = DateTime.parse(dateStr);
-      return '${date.day}/${date.month}/${date.year}';
-    } catch (e) {
-      return dateStr;
-    }
   }
 
   String _formatDateTime(String dateStr) {

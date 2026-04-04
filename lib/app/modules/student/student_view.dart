@@ -17,41 +17,7 @@ class StudentView extends GetView<StudentController> {
         appBar: AppBar(
           title: const Text('Student Dashboard'),
           actions: [
-            Obx(
-              () => Stack(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.notifications),
-                    onPressed: () => _showNotificationsDialog(),
-                  ),
-                  if (controller.unreadNotificationCount > 0)
-                    Positioned(
-                      right: 6,
-                      top: 6,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          '${controller.unreadNotificationCount}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+            _buildNotificationBell(),
             IconButton(
               icon: const Icon(Icons.logout),
               onPressed: controller.logout,
@@ -86,7 +52,7 @@ class StudentView extends GetView<StudentController> {
 
   Widget _buildStatsCards() {
     return Obx(
-      () => Row(
+          () => Row(
         children: [
           Expanded(
             child: _buildStatCard(
@@ -512,14 +478,13 @@ class StudentView extends GetView<StudentController> {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          // Enroll button
                           if (!enrolled)
                             SizedBox(
                               height: 36,
                               child: Obx(
-                                () => ElevatedButton(
+                                    () => ElevatedButton(
                                   onPressed:
-                                      controller.enrolling.value == cls.id
+                                  controller.enrolling.value == cls.id
                                       ? null
                                       : () => controller.enrollInClass(cls.id),
                                   style: ElevatedButton.styleFrom(
@@ -603,7 +568,6 @@ class StudentView extends GetView<StudentController> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Title row with status badges
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -663,7 +627,6 @@ class StudentView extends GetView<StudentController> {
                             style: const TextStyle(fontSize: 12),
                           ),
                           const SizedBox(height: 4),
-                          // Class, teacher, and due date info
                           Wrap(
                             spacing: 8,
                             runSpacing: 4,
@@ -696,7 +659,6 @@ class StudentView extends GetView<StudentController> {
                                 ),
                             ],
                           ),
-                          // Grade feedback if available
                           if (submission != null &&
                               submission.grade != null) ...[
                             const SizedBox(height: 8),
@@ -728,7 +690,6 @@ class StudentView extends GetView<StudentController> {
                             ),
                           ],
                           const SizedBox(height: 8),
-                          // Action buttons
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
@@ -830,7 +791,6 @@ class StudentView extends GetView<StudentController> {
                     style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                   const SizedBox(height: 20),
-                  // File picker button
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
@@ -854,10 +814,10 @@ class StudentView extends GetView<StudentController> {
                     children: [
                       Expanded(
                         child: Obx(
-                          () => ElevatedButton(
+                              () => ElevatedButton(
                             onPressed:
-                                controller.selectedSubmitFile.value == null ||
-                                    controller.isSubmitting.value
+                            controller.selectedSubmitFile.value == null ||
+                                controller.isSubmitting.value
                                 ? null
                                 : controller.submitExercise,
                             style: ElevatedButton.styleFrom(
@@ -936,6 +896,41 @@ class StudentView extends GetView<StudentController> {
     }
   }
 
+  Widget _buildNotificationBell() {
+    return Obx(() {
+      final hasUnread = controller.unreadNotificationCount > 0;
+      return Stack(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            onPressed: () => _showNotificationsDialog(),
+          ),
+          if (hasUnread)
+            Positioned(
+              right: 6,
+              top: 6,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                child: Text(
+                  '${controller.unreadNotificationCount}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+        ],
+      );
+    });
+  }
   void _showNotificationsDialog() {
     controller.markAllNotificationsAsRead();
     Get.dialog(
@@ -944,21 +939,21 @@ class StudentView extends GetView<StudentController> {
         insetPadding: EdgeInsets.zero,
         child: Container(
           width: 350,
-          height: double.infinity,
+          height: double.infinity, // Full screen height
           color: Colors.white,
           child: Column(
             children: [
+              // Header
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue[700],
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 4,
-                      offset: const Offset(-2, 0),
+                  color: Colors.white,
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Colors.grey[200]!,
+                      width: 1,
                     ),
-                  ],
+                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -966,18 +961,20 @@ class StudentView extends GetView<StudentController> {
                     const Text(
                       'Notifications',
                       style: TextStyle(
-                        color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
+                      icon: const Icon(Icons.close),
                       onPressed: () => Get.back(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
                     ),
                   ],
                 ),
               ),
+              // Content
               Expanded(
                 child: Obx(() {
                   if (controller.notifications.isEmpty) {
@@ -1049,6 +1046,7 @@ class StudentView extends GetView<StudentController> {
           ),
         ),
       ),
+      barrierDismissible: true,
     );
   }
 }

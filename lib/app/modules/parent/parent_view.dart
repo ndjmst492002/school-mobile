@@ -19,78 +19,8 @@ class ParentView extends GetView<ParentController> {
         appBar: AppBar(
           title: const Text('Parent Dashboard'),
           actions: [
-            Obx(() {
-              final hasUnread = controller.unreadMessageCount.value > 0;
-              return Stack(
-                children: [
-                  controller.showChat.value
-                      ? IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () {
-                            Get.delete<ChatController>();
-                            controller.toggleChat();
-                            controller.updateUnreadMessageCount(0);
-                          },
-                        )
-                      : IconButton(
-                          icon: const Icon(Icons.chat),
-                          onPressed: () {
-                            Get.put(ChatController());
-                            controller.toggleChat();
-                            controller.updateUnreadMessageCount(0);
-                          },
-                        ),
-                  if (hasUnread)
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            }),
-            Obx(
-              () => Stack(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.notifications),
-                    onPressed: () => _showNotificationsDialog(),
-                  ),
-                  if (controller.unreadNotificationCount > 0)
-                    Positioned(
-                      right: 6,
-                      top: 6,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          '${controller.unreadNotificationCount}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+            _buildChatIcon(),
+            _buildNotificationBell(),
             IconButton(
               icon: const Icon(Icons.logout),
               onPressed: controller.logout,
@@ -99,11 +29,11 @@ class ParentView extends GetView<ParentController> {
         ),
         body: controller.showChat.value
             ? ChatView(
-                onClose: () {
-                  Get.delete<ChatController>();
-                  controller.toggleChat();
-                },
-              )
+          onClose: () {
+            Get.delete<ChatController>();
+            controller.toggleChat();
+          },
+        )
             : _buildBody(),
       );
     });
@@ -119,7 +49,7 @@ class ParentView extends GetView<ParentController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Obx(
-              () => Text(
+                  () => Text(
                 'Welcome, ${controller.userName}',
                 style: const TextStyle(fontSize: 18),
               ),
@@ -147,14 +77,14 @@ class ParentView extends GetView<ParentController> {
 
   Widget _buildStatsCards() {
     return Obx(
-      () => Wrap(
+          () => Wrap(
         spacing: 8,
         runSpacing: 8,
         children: [
           SizedBox(
             width:
-                (MediaQuery.of(Get.context!).size.width - 40) /
-                2, // Half width minus padding
+            (MediaQuery.of(Get.context!).size.width - 40) /
+                2,
             child: _buildStatCard(
               'My Children',
               '${controller.children.length}',
@@ -199,12 +129,12 @@ class ParentView extends GetView<ParentController> {
   }
 
   Widget _buildStatCard(
-    String title,
-    String value,
-    String subtitle,
-    Color color,
-    IconData icon,
-  ) {
+      String title,
+      String value,
+      String subtitle,
+      Color color,
+      IconData icon,
+      ) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -545,7 +475,7 @@ class ParentView extends GetView<ParentController> {
                               Expanded(
                                 child: Text(
                                   child.fullName,
-                                  softWrap: true, // Allow wrapping
+                                  softWrap: true,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
@@ -651,6 +581,82 @@ class ParentView extends GetView<ParentController> {
     }
   }
 
+  Widget _buildChatIcon() {
+    return Obx(() {
+      final hasUnread = controller.unreadMessageCount.value > 0;
+      return Stack(
+        children: [
+          controller.showChat.value
+              ? IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () {
+              Get.delete<ChatController>();
+              controller.toggleChat();
+              controller.updateUnreadMessageCount(0);
+            },
+          )
+              : IconButton(
+            icon: const Icon(Icons.chat),
+            onPressed: () {
+              Get.put(ChatController());
+              controller.toggleChat();
+              controller.updateUnreadMessageCount(0);
+            },
+          ),
+          if (hasUnread)
+            Positioned(
+              right: 8,
+              top: 8,
+              child: Container(
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildNotificationBell() {
+    return Obx(() {
+      final hasUnread = controller.unreadNotificationCount > 0;
+      return Stack(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            onPressed: () => _showNotificationsDialog(),
+          ),
+          if (hasUnread)
+            Positioned(
+              right: 6,
+              top: 6,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                child: Text(
+                  '${controller.unreadNotificationCount}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+        ],
+      );
+    });
+  }
+
   Widget _buildInfoChip(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -658,10 +664,10 @@ class ParentView extends GetView<ParentController> {
       children: [
         Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
         SizedBox(
-          width: 120, // Fixed width to prevent overflow
+          width: 120,
           child: Text(
             value,
-            softWrap: true, // Allow wrapping
+            softWrap: true,
             style: const TextStyle(fontSize: 12),
           ),
         ),
@@ -773,17 +779,17 @@ class ParentView extends GetView<ParentController> {
           color: Colors.white,
           child: Column(
             children: [
+              // Header - Clean white with bottom border (no blue)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue[700],
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 4,
-                      offset: const Offset(-2, 0),
+                  color: Colors.white,
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Colors.grey[200]!,
+                      width: 1,
                     ),
-                  ],
+                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -791,18 +797,20 @@ class ParentView extends GetView<ParentController> {
                     const Text(
                       'Notifications',
                       style: TextStyle(
-                        color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
+                      icon: const Icon(Icons.close),
                       onPressed: () => Get.back(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
                     ),
                   ],
                 ),
               ),
+              // Content
               Expanded(
                 child: Obx(() {
                   if (controller.notifications.isEmpty) {
@@ -874,6 +882,7 @@ class ParentView extends GetView<ParentController> {
           ),
         ),
       ),
+      barrierDismissible: true,
     );
   }
 }

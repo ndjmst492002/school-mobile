@@ -131,6 +131,7 @@ class TeacherController extends GetxController {
   Future<void> loadUnreadMessageCount() async {
     try {
       final count = await _teacherApi.getUnreadMessageCount();
+      debugPrint('Loaded unread message count: $count');
       unreadMessageCount.value = count;
     } catch (e) {
       debugPrint('Error loading unread message count: $e');
@@ -138,7 +139,9 @@ class TeacherController extends GetxController {
   }
 
   void updateUnreadMessageCount(int count) {
+    debugPrint('updateUnreadMessageCount called with: $count');
     unreadMessageCount.value = count.clamp(0, 999);
+    debugPrint('unreadMessageCount.value is now: ${unreadMessageCount.value}');
   }
 
   void toggleAttendanceForm() {
