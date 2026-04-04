@@ -101,4 +101,29 @@ class TeacherApi {
     );
     return Announcement.fromJson(response.data);
   }
+
+  Future<List<AttendanceRecord>> getAttendance(int classId, String date) async {
+    final response = await _api.get(
+      '/users/teacher/attendance/',
+      queryParameters: {'class_id': classId, 'date': date},
+    );
+    final List<dynamic> data = response.data;
+    return data.map((json) => AttendanceRecord.fromJson(json)).toList();
+  }
+
+  Future<List<AttendanceRecord>> markAttendance(
+    List<Map<String, dynamic>> records,
+  ) async {
+    final response = await _api.post(
+      '/users/teacher/attendance/',
+      data: {'records': records},
+    );
+    final List<dynamic> data = response.data;
+    return data.map((json) => AttendanceRecord.fromJson(json)).toList();
+  }
+
+  Future<int> getUnreadMessageCount() async {
+    final response = await _api.get('/users/chat/unread-count/');
+    return response.data['count'] ?? 0;
+  }
 }

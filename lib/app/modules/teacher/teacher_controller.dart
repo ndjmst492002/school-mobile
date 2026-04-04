@@ -17,18 +17,27 @@ class TeacherController extends GetxController {
   final exercises = <Exercise>[].obs;
   final submissions = <Submission>[].obs;
   final announcements = <Announcement>[].obs;
+  final attendance = <AttendanceRecord>[].obs;
   final isLoading = true.obs;
   final showUploadForm = false.obs;
   final showAnnouncementForm = false.obs;
   final showChat = false.obs;
+  final showAttendanceForm = false.obs;
   final gradingSubmission = Rxn<Submission>();
   final isGrading = false.obs;
   final isUploading = false.obs;
   final isPosting = false.obs;
+  final isSavingAttendance = false.obs;
   final selectedFile = Rxn<PlatformFile>();
+  final unreadMessageCount = 0.obs;
 
   final uploadClassId = ''.obs;
   final announcementClassId = ''.obs;
+  final attendanceClassId = ''.obs;
+  final attendanceDateController = TextEditingController();
+  final attendanceRecords = <int, String>{}.obs;
+  final isLoadingAttendance = false.obs;
+  final showLoadStudentsButton = true.obs;
 
   final uploadTitleController = TextEditingController();
   final uploadDescController = TextEditingController();
@@ -48,7 +57,9 @@ class TeacherController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    attendanceDateController.text = DateTime.now().toString().split(' ')[0];
     loadData();
+    loadUnreadMessageCount();
   }
 
   @override
@@ -60,6 +71,7 @@ class TeacherController extends GetxController {
     announcementContentController.dispose();
     gradeController.dispose();
     feedbackController.dispose();
+    attendanceDateController.dispose();
     super.onClose();
   }
 
@@ -114,6 +126,89 @@ class TeacherController extends GetxController {
 
   void toggleChat() {
     showChat.value = !showChat.value;
+  }
+
+  Future<void> loadUnreadMessageCount() async {
+    try {
+      final count = await _teacherApi.getUnreadMessageCount();
+      unreadMessageCount.value = count;
+    } catch (e) {
+      debugPrint('Error loading unread message count: $e');
+    }
+  }
+
+  void updateUnreadMessageCount(int count) {
+    unreadMessageCount.value = count.clamp(0, 999);
+  }
+
+  void toggleAttendanceForm() {
+    showAttendanceForm.value = !showAttendanceForm.value;
+    if (!showAttendanceForm.value) {
+      attendanceClassId.value = '';
+      attendanceRecords.clear();
+    }
+  }
+
+  Future<void> loadAttendance() async {
+    if (attendanceClassId.value.isEmpty) return;
+
+    isLoadingAttendance.value = true;
+    try {
+      final classId = int.parse(attendanceClassId.value);
+      final date = attendanceDateController.text;
+      final records = await _teacherApi.getAttendance(classId, date);
+      attendance.value = records;
+
+      attendanceRecords.clear();
+      for (var record in records) {
+        attendanceRecords[record.student] = record.status;
+      }
+
+      final cls = classes.firstWhereOrNull((c) => c.id == classId);
+      if (cls != null) {
+        for (var student in cls.students ?? []) {
+          if (!attendanceRecords.containsKey(student.id)) {
+            attendanceRecords[student.id] = 'PRESENT';
+          }
+        }
+      }
+      showLoadStudentsButton.value = false;
+    } catch (e) {
+      debugPrint('Error loading attendance: $e');
+    } finally {
+      isLoadingAttendance.value = false;
+    }
+  }
+
+  Future<void> saveAttendance() async {
+    if (attendanceClassId.value.isEmpty || attendanceRecords.isEmpty) return;
+
+    isSavingAttendance.value = true;
+    try {
+      final records = attendanceRecords.entries
+          .map(
+            (entry) => {
+              'student_id': entry.key,
+              'class_id': int.parse(attendanceClassId.value),
+              'date': attendanceDateController.text,
+              'status': entry.value,
+            },
+          )
+          .toList();
+
+      await _teacherApi.markAttendance(records);
+      await loadAttendance();
+      Get.snackbar('Success', 'Attendance saved successfully');
+    } catch (e) {
+      debugPrint('Error saving attendance: $e');
+      Get.snackbar('Error', 'Failed to save attendance');
+    } finally {
+      isSavingAttendance.value = false;
+    }
+  }
+
+  void setStudentAttendance(int studentId, String status) {
+    attendanceRecords[studentId] = status;
   }
 
   Future<void> pickFile() async {
@@ -214,6 +309,7 @@ class TeacherController extends GetxController {
   void updateUploadClassId(String value) => uploadClassId.value = value;
   void updateAnnouncementClassId(String value) =>
       announcementClassId.value = value;
+  void updateAttendanceClassId(String value) => attendanceClassId.value = value;
 
   Future<void> createAnnouncement() async {
     if (announcementTitleController.text.isEmpty ||
@@ -250,14 +346,12 @@ class TeacherController extends GetxController {
     return _teacherApi.downloadSubmissionUrl(submissionId);
   }
 
-  // FIXED: Now works on both web and mobile
   Future<void> downloadSubmission(int submissionId) async {
     final url = downloadSubmissionUrl(submissionId);
     debugPrint('Download URL: $url');
 
-    // Find the submission to check if it has a file
     final submission = submissions.firstWhereOrNull(
-          (s) => s.id == submissionId,
+      (s) => s.id == submissionId,
     );
     if (submission == null) {
       Get.snackbar('Error', 'Submission not found');

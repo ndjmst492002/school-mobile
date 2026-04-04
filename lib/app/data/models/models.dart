@@ -4,7 +4,7 @@ class ClassModel {
   final String description;
   final int? teacher;
   final String? teacherName;
-  final List<int>? students;
+  final List<StudentInfo>? students;
   final int studentCount;
 
   ClassModel({
@@ -25,10 +25,31 @@ class ClassModel {
       teacher: json['teacher'],
       teacherName: json['teacher_name'],
       students: json['students'] != null
-          ? List<int>.from(json['students'])
+          ? (json['students'] as List)
+                .map(
+                  (s) => StudentInfo.fromJson(
+                    s is Map<String, dynamic> ? s : {'id': s, 'full_name': ''},
+                  ),
+                )
+                .toList()
           : null,
-      studentCount: json['student_count'] ?? 0,
+      studentCount: json['student_count'] != null
+          ? (json['student_count'] is int
+                ? json['student_count']
+                : int.tryParse(json['student_count'].toString()) ?? 0)
+          : 0,
     );
+  }
+}
+
+class StudentInfo {
+  final int id;
+  final String fullName;
+
+  StudentInfo({required this.id, required this.fullName});
+
+  factory StudentInfo.fromJson(Map<String, dynamic> json) {
+    return StudentInfo(id: json['id'] ?? 0, fullName: json['full_name'] ?? '');
   }
 }
 
@@ -133,6 +154,79 @@ class Announcement {
       content: json['content'] ?? '',
       teacherName: json['teacher_name'],
       className: json['class_name'],
+      createdAt: json['created_at'] ?? '',
+    );
+  }
+}
+
+class AttendanceRecord {
+  final int id;
+  final int student;
+  final String? studentName;
+  final int relatedClass;
+  final String? className;
+  final String date;
+  final String status;
+  final int markedBy;
+  final String? teacherName;
+  final String markedAt;
+
+  AttendanceRecord({
+    required this.id,
+    required this.student,
+    this.studentName,
+    required this.relatedClass,
+    this.className,
+    required this.date,
+    required this.status,
+    required this.markedBy,
+    this.teacherName,
+    required this.markedAt,
+  });
+
+  factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
+    return AttendanceRecord(
+      id: json['id'] ?? 0,
+      student: json['student'] ?? 0,
+      studentName: json['student_name'],
+      relatedClass: json['related_class'] ?? 0,
+      className: json['class_name'],
+      date: json['date'] ?? '',
+      status: json['status'] ?? 'PRESENT',
+      markedBy: json['marked_by'] ?? 0,
+      teacherName: json['teacher_name'],
+      markedAt: json['marked_at'] ?? '',
+    );
+  }
+}
+
+class AppNotification {
+  final int id;
+  final int recipient;
+  final String type;
+  final String title;
+  final String message;
+  final bool isRead;
+  final String createdAt;
+
+  AppNotification({
+    required this.id,
+    required this.recipient,
+    required this.type,
+    required this.title,
+    required this.message,
+    required this.isRead,
+    required this.createdAt,
+  });
+
+  factory AppNotification.fromJson(Map<String, dynamic> json) {
+    return AppNotification(
+      id: json['id'] ?? 0,
+      recipient: json['recipient'] ?? 0,
+      type: json['type'] ?? '',
+      title: json['title'] ?? '',
+      message: json['message'] ?? '',
+      isRead: json['is_read'] ?? false,
       createdAt: json['created_at'] ?? '',
     );
   }

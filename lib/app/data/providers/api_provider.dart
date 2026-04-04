@@ -1,44 +1,43 @@
 import 'package:dio/dio.dart' as dio_pkg;
+import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:cookie_jar/cookie_jar.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 class ApiProvider extends GetxService {
   late final dio_pkg.Dio _dio;
-  String? _sessionCookie;
 
-  // Update this to match your backend URL
-  //Android Device (with your ip address)
-  static const String baseUrl = 'http://192.168.1.5:8000/api';
-  //Chrome(Web)
-  //static const String baseUrl = 'http://localhost:8000/api';
+  static const String baseUrl = 'http://192.168.1.4:8000/api';
 
   Future<ApiProvider> init() async {
     _dio = dio_pkg.Dio(
       dio_pkg.BaseOptions(
         baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
-        headers: {'Content-Type': 'application/json'},
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
+        validateStatus: (status) => true,
       ),
     );
+
+    var cookieJar = CookieJar();
+    _dio.interceptors.add(CookieManager(cookieJar));
 
     _dio.interceptors.add(
       dio_pkg.InterceptorsWrapper(
         onRequest: (options, handler) {
-          // Add cookie to request if we have one
-          if (_sessionCookie != null) {
-            options.headers['Cookie'] = _sessionCookie;
-          }
+          debugPrint('REQUEST: ${options.method} ${options.uri}');
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          // Extract cookie from Set-Cookie header
-          final cookies = response.headers['set-cookie'];
-          if (cookies != null && cookies.isNotEmpty) {
-            _sessionCookie = _extractSessionCookie(cookies);
-          }
+          debugPrint(
+            'RESPONSE: ${response.statusCode} ${response.requestOptions.uri}',
+          );
           return handler.next(response);
         },
         onError: (error, handler) async {
+          debugPrint(
+            'ERROR: ${error.response?.statusCode} ${error.requestOptions.uri}',
+          );
           if (error.response?.statusCode == 401) {
             Get.find<AuthService>().logout();
           }
@@ -50,37 +49,13 @@ class ApiProvider extends GetxService {
     return this;
   }
 
-  String? _extractSessionCookie(List<String> cookies) {
-    // Look for sessionid cookie first
-    for (final cookie in cookies) {
-      if (cookie.contains('sessionid')) {
-        final parts = cookie.split(';');
-        return parts[0];
-      }
-    }
-    // Fall back to first cookie
-    if (cookies.isNotEmpty) {
-      final parts = cookies.first.split(';');
-      return parts[0];
-    }
-    return null;
-  }
-
   dio_pkg.Dio get dio => _dio;
 
   Future<dio_pkg.Response> get(
     String path, {
     Map<String, dynamic>? queryParameters,
   }) async {
-    try {
-      return await _dio.get(
-        path,
-        queryParameters: queryParameters,
-        options: _getOptionsWithCredentials(),
-      );
-    } on dio_pkg.DioException {
-      rethrow;
-    }
+    return await _dio.get(path, queryParameters: queryParameters);
   }
 
   Future<dio_pkg.Response> post(
@@ -88,16 +63,7 @@ class ApiProvider extends GetxService {
     dynamic data,
     Map<String, dynamic>? queryParameters,
   }) async {
-    try {
-      return await _dio.post(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: _getOptionsWithCredentials(),
-      );
-    } on dio_pkg.DioException {
-      rethrow;
-    }
+    return await _dio.post(path, data: data, queryParameters: queryParameters);
   }
 
   Future<dio_pkg.Response> patch(
@@ -105,16 +71,7 @@ class ApiProvider extends GetxService {
     dynamic data,
     Map<String, dynamic>? queryParameters,
   }) async {
-    try {
-      return await _dio.patch(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: _getOptionsWithCredentials(),
-      );
-    } on dio_pkg.DioException {
-      rethrow;
-    }
+    return await _dio.patch(path, data: data, queryParameters: queryParameters);
   }
 
   Future<dio_pkg.Response> delete(
@@ -122,50 +79,26 @@ class ApiProvider extends GetxService {
     dynamic data,
     Map<String, dynamic>? queryParameters,
   }) async {
-    try {
-      return await _dio.delete(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: _getOptionsWithCredentials(),
-      );
-    } on dio_pkg.DioException {
-      rethrow;
-    }
+    return await _dio.delete(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+    );
   }
 
   Future<dio_pkg.Response> uploadFile(
     String path, {
     required dio_pkg.FormData data,
   }) async {
-    try {
-      return await _dio.post(
-        path,
-        data: data,
-        options: dio_pkg.Options(
-          contentType: 'multipart/form-data',
-          extra: {'withCredentials': true},
-        ),
-      );
-    } on dio_pkg.DioException {
-      rethrow;
-    }
+    return await _dio.post(
+      path,
+      data: data,
+      options: dio_pkg.Options(contentType: 'multipart/form-data'),
+    );
   }
 
   Future<void> downloadFile(String url, String filename) async {
-    try {
-      await _dio.download(
-        url,
-        filename,
-        options: dio_pkg.Options(extra: {'withCredentials': true}),
-      );
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  dio_pkg.Options _getOptionsWithCredentials() {
-    return dio_pkg.Options(extra: {'withCredentials': true});
+    await _dio.download(url, filename);
   }
 }
 

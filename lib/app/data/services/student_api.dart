@@ -74,4 +74,25 @@ class StudentApi {
     final List<dynamic> data = response.data;
     return data.map((json) => Announcement.fromJson(json)).toList();
   }
+
+  Future<List<AttendanceRecord>> getAttendance() async {
+    final response = await _api.get('/users/student/attendance/');
+    final List<dynamic> data = response.data;
+    return data.map((json) => AttendanceRecord.fromJson(json)).toList();
+  }
+
+  Future<List<AppNotification>> getNotifications() async {
+    final response = await _api.get('/users/notifications/');
+    final List<dynamic> data = response.data;
+    return data.map((json) => AppNotification.fromJson(json)).toList();
+  }
+
+  Future<int> getUnreadNotificationCount() async {
+    final response = await _api.get('/users/notifications/unread-count/');
+    return response.data['count'] ?? 0;
+  }
+
+  Future<void> markNotificationAsRead(int notificationId) async {
+    await _api.post('/users/notifications/$notificationId/read/');
+  }
 }

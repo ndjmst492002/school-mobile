@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:url_launcher/url_launcher.dart';  // ADD THIS
+import 'package:url_launcher/url_launcher.dart'; // ADD THIS
 import '../../data/providers/api_provider.dart';
 import '../../data/services/auth_api.dart';
 import '../../data/services/student_api.dart';
@@ -17,6 +17,8 @@ class StudentController extends GetxController {
   final exercises = <Exercise>[].obs;
   final submissions = <Submission>[].obs;
   final announcements = <Announcement>[].obs;
+  final attendance = <AttendanceRecord>[].obs;
+  final notifications = <AppNotification>[].obs;
   final isLoading = true.obs;
   final enrolling = Rxn<int>();
   final selectedExercise = Rxn<Exercise>();
@@ -27,8 +29,15 @@ class StudentController extends GetxController {
   String get userName => _auth.userFullName;
   int get userId => _auth.userId;
 
-  int get enrolledCount =>
-      classes.where((c) => c.students?.contains(userId) ?? false).length;
+  int get unreadNotificationCount =>
+      notifications.where((n) => !n.isRead).length;
+
+  int get enrolledCount => classes
+      .where((c) => c.students?.any((s) => s.id == userId) ?? false)
+      .length;
+
+  int get presentCount => attendance.where((a) => a.status == 'PRESENT').length;
+  int get absentCount => attendance.where((a) => a.status == 'ABSENT').length;
 
   @override
   void onInit() {
@@ -39,16 +48,24 @@ class StudentController extends GetxController {
   Future<void> loadData() async {
     isLoading.value = true;
     try {
+      debugPrint('Loading student data...');
       final results = await Future.wait([
         _studentApi.getAllClasses(),
         _studentApi.getExercises(),
         _studentApi.getSubmissions(),
         _studentApi.getAnnouncements(),
+        _studentApi.getAttendance(),
+        _studentApi.getNotifications(),
       ]);
       classes.value = results[0] as List<ClassModel>;
       exercises.value = results[1] as List<Exercise>;
       submissions.value = results[2] as List<Submission>;
       announcements.value = results[3] as List<Announcement>;
+      attendance.value = results[4] as List<AttendanceRecord>;
+      notifications.value = results[5] as List<AppNotification>;
+      debugPrint(
+        'Loaded ${attendance.length} attendance records, ${notifications.length} notifications',
+      );
     } catch (e) {
       debugPrint('Error loading data: $e');
     } finally {
@@ -58,7 +75,7 @@ class StudentController extends GetxController {
 
   bool isEnrolled(int classId) {
     final cls = classes.firstWhereOrNull((c) => c.id == classId);
-    return cls?.students?.contains(userId) ?? false;
+    return cls?.students?.any((s) => s.id == userId) ?? false;
   }
 
   Future<void> enrollInClass(int classId) async {
@@ -172,5 +189,48 @@ class StudentController extends GetxController {
     }
     _auth.logout();
     Get.offAllNamed(AppRoutes.login);
+  }
+
+  Future<void> markNotificationAsRead(int notificationId) async {
+    try {
+      await _studentApi.markNotificationAsRead(notificationId);
+      final index = notifications.indexWhere((n) => n.id == notificationId);
+      if (index != -1) {
+        notifications[index] = AppNotification(
+          id: notifications[index].id,
+          recipient: notifications[index].recipient,
+          type: notifications[index].type,
+          title: notifications[index].title,
+          message: notifications[index].message,
+          isRead: true,
+          createdAt: notifications[index].createdAt,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error marking notification as read: $e');
+    }
+  }
+
+  Future<void> markAllNotificationsAsRead() async {
+    try {
+      for (var notification in notifications.where((n) => !n.isRead)) {
+        await _studentApi.markNotificationAsRead(notification.id);
+      }
+      notifications.value = notifications
+          .map(
+            (n) => AppNotification(
+              id: n.id,
+              recipient: n.recipient,
+              type: n.type,
+              title: n.title,
+              message: n.message,
+              isRead: true,
+              createdAt: n.createdAt,
+            ),
+          )
+          .toList();
+    } catch (e) {
+      debugPrint('Error marking all notifications as read: $e');
+    }
   }
 }

@@ -1,3 +1,5 @@
+import 'models.dart';
+
 class StudentChild {
   final int id;
   final String fullName;
@@ -72,6 +74,24 @@ class AnnouncementData {
       teacherName: json['teacher_name'],
       className: json['class_name'],
       createdAt: json['created_at'] ?? '',
+    );
+  }
+}
+
+class ChildAttendance {
+  final String childName;
+  final List<AttendanceRecord> attendance;
+
+  ChildAttendance({required this.childName, required this.attendance});
+
+  factory ChildAttendance.fromJson(Map<String, dynamic> json) {
+    return ChildAttendance(
+      childName: json['child_name'] ?? '',
+      attendance: json['attendance'] != null
+          ? (json['attendance'] as List)
+                .map((a) => AttendanceRecord.fromJson(a))
+                .toList()
+          : [],
     );
   }
 }

@@ -16,7 +16,7 @@ class AuthApi {
     try {
       await _api.post('/users/logout/');
     } catch (e) {
-      // Continue even if logout fails on server
+      // Continue even if logout fails
     }
   }
 

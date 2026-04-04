@@ -62,9 +62,22 @@ class LoginView extends GetView<LoginController> {
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: Colors.red[200]!),
                           ),
-                          child: Text(
-                            controller.error.value!,
-                            style: TextStyle(color: Colors.red[700]),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                controller.error.value!,
+                                style: TextStyle(color: Colors.red[700]),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Check browser console (F12) for details',
+                                style: TextStyle(
+                                  color: Colors.red[400],
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       }

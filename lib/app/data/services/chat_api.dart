@@ -31,4 +31,9 @@ class ChatApi {
     final response = await _api.post('/users/ws-ticket/');
     return response.data['ticket'];
   }
+
+  Future<int> getUnreadMessageCount() async {
+    final response = await _api.get('/users/chat/unread-count/');
+    return response.data['count'] ?? 0;
+  }
 }

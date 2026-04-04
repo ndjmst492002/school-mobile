@@ -3,12 +3,14 @@ class Contact {
   final int userId;
   final String fullName;
   final String role;
+  final int? unreadCount;
 
   Contact({
     required this.id,
     required this.userId,
     required this.fullName,
     required this.role,
+    this.unreadCount,
   });
 
   factory Contact.fromJson(Map<String, dynamic> json) {
@@ -18,6 +20,7 @@ class Contact {
       userId: user?['id'] ?? json['id'] ?? 0,
       fullName: json['full_name'] ?? user?['full_name'] ?? '',
       role: user?['role'] ?? '',
+      unreadCount: json['unread_count'] ?? 0,
     );
   }
 }

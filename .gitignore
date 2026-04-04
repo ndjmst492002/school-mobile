@@ -41,3 +41,7 @@
 *.jks
 *.keystore
 .DS_Store
+nul
+android/nul
+nul
+android/nul

@@ -6,6 +6,8 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../data/services/chat_api.dart';
 import '../../data/providers/api_provider.dart';
 import '../../data/models/chat_models.dart';
+import '../teacher/teacher_controller.dart';
+import '../parent/parent_controller.dart';
 
 class ChatController extends GetxController {
   final ChatApi _chatApi = ChatApi();
@@ -107,7 +109,7 @@ class ChatController extends GetxController {
       debugPrint('✅ WebSocket connected successfully');
 
       _wsSubscription = _wsChannel!.stream.listen(
-            (data) {
+        (data) {
           debugPrint('WebSocket received data: $data');
           _handleWsMessage(data);
         },
@@ -124,7 +126,6 @@ class ChatController extends GetxController {
           _scheduleReconnect();
         },
       );
-
     } catch (e) {
       debugPrint('❌ WebSocket connection failed: $e');
       connectionStatus.value = 'Connection failed';
@@ -143,10 +144,14 @@ class ChatController extends GetxController {
       return;
     }
 
-    final delay = Duration(seconds: [2, 4, 8, 16, 30][_reconnectAttempts.clamp(0, 4)]);
+    final delay = Duration(
+      seconds: [2, 4, 8, 16, 30][_reconnectAttempts.clamp(0, 4)],
+    );
     _reconnectAttempts++;
 
-    debugPrint('Reconnecting in ${delay.inSeconds}s (attempt $_reconnectAttempts)');
+    debugPrint(
+      'Reconnecting in ${delay.inSeconds}s (attempt $_reconnectAttempts)',
+    );
     connectionStatus.value = 'Reconnecting...';
 
     _reconnectTimer?.cancel();
@@ -168,6 +173,11 @@ class ChatController extends GetxController {
         final msg = ChatMessage.fromJson(msgData);
 
         final contactUserId = selectedContact.value?.userId;
+
+        if (msg.sender != currentUserId) {
+          _updateUnreadCountForContact(msg.sender);
+        }
+
         if (contactUserId == null) return;
 
         if ((msg.sender == currentUserId && msg.receiver == contactUserId) ||
@@ -181,6 +191,41 @@ class ChatController extends GetxController {
       }
     } catch (e) {
       debugPrint('Error handling WebSocket message: $e');
+    }
+  }
+
+  void _updateUnreadCountForContact(int contactUserId) {
+    final contactIndex = contacts.indexWhere((c) => c.userId == contactUserId);
+    if (contactIndex != -1) {
+      final contact = contacts[contactIndex];
+      final newCount = (contact.unreadCount ?? 0) + 1;
+      contacts[contactIndex] = Contact(
+        id: contact.id,
+        userId: contact.userId,
+        fullName: contact.fullName,
+        role: contact.role,
+        unreadCount: newCount,
+      );
+      _notifyParentController();
+    }
+  }
+
+  void _notifyParentController() {
+    final totalUnread = contacts.fold<int>(
+      0,
+      (sum, c) => sum + (c.unreadCount ?? 0),
+    );
+    if (Get.isRegistered<TeacherController>()) {
+      try {
+        final teacherController = Get.find<TeacherController>();
+        teacherController.updateUnreadMessageCount(totalUnread);
+      } catch (e) {}
+    }
+    if (Get.isRegistered<ParentController>()) {
+      try {
+        final parentController = Get.find<ParentController>();
+        parentController.updateUnreadMessageCount(totalUnread);
+      } catch (e) {}
     }
   }
 
