@@ -199,7 +199,9 @@ class ParentView extends GetView<ParentController> {
               return ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: controller.announcements.length,
+                itemCount: controller.announcements.length > 5
+                    ? 5
+                    : controller.announcements.length,
                 itemBuilder: (context, index) {
                   final childAnn = controller.announcements[index];
                   final ann = childAnn.announcement;
@@ -211,9 +213,33 @@ class ParentView extends GetView<ParentController> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          // Teacher name (matching StudentView)
                           Text(
-                            childAnn.childName,
+                            'From: ${ann.teacherName ?? "Teacher"}',
                             maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: Colors.blue,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          // Child name (additional info for parent)
+                          Text(
+                            'Child: ${childAnn.childName}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          // Title (matching StudentView)
+                          Text(
+                            ann.title,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
@@ -221,38 +247,55 @@ class ParentView extends GetView<ParentController> {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            'From: ${ann.teacherName ?? "Teacher"}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            ann.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
+                          // Content (matching StudentView)
                           Text(
                             ann.content,
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 12),
+                            style: const TextStyle(fontSize: 13),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _formatDateTime(ann.createdAt),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey,
-                            ),
+                          const SizedBox(height: 8),
+                          // Tags (matching StudentView)
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              if (ann.className != null)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue[50],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    'Class: ${ann.className}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.blue[700],
+                                    ),
+                                  ),
+                                ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  _formatDateTime(ann.createdAt),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

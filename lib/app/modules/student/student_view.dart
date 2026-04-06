@@ -210,7 +210,7 @@ class StudentView extends GetView<StudentController> {
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  _formatDate(ann.createdAt),
+                                  _formatDateTime(ann.createdAt), // Changed from _formatDate to _formatDateTime
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: Colors.grey[600],
